@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -22,23 +21,28 @@ import java.util.Optional;
 @Component
 @Aspect
 @Slf4j
-public class AutoCacheAOP {
+public class AutoCacheAdvice {
 
     @Value("${spring.application.name}")
     private String appName;
 
-    @Autowired
-    private CacheManager cacheManager;
+    private final CacheManager cacheManager;
+    private final KeyGenerator keyGenerator;
 
     private static final String CACHE_PREFIX = "AUTO_CACHE";
+
+    public AutoCacheAdvice(CacheManager cacheManager, KeyGenerator keyGenerator) {
+        this.cacheManager = cacheManager;
+        this.keyGenerator = keyGenerator;
+    }
 
     @Around("@annotation(io.github.natsusai.cache.AutoCache)")
     public Object process(ProceedingJoinPoint point) throws Throwable {
         Object[] args = point.getArgs();
         String methodName = point.getSignature().getName();
         String clazzName = point.getSignature().getDeclaringType().getName();
-        String cacheName = KeyGenerator.generateCacheName(CACHE_PREFIX, appName, clazzName, methodName);
-        String cacheKey = KeyGenerator.generateCacheKey(args);
+        String cacheName = keyGenerator.generateCacheName(CACHE_PREFIX, appName, clazzName, methodName);
+        String cacheKey = keyGenerator.generateCacheKey(args);
         Cache cache = cacheManager.getCache(cacheName);
         if (cache == null) {
             log.warn("Not allow in flight cache creation, can't auto create cache!");
