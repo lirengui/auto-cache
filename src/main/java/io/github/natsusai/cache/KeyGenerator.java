@@ -22,8 +22,8 @@ public class KeyGenerator {
          mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
-    public static String generateCacheName(String appName, String clazzName, String methodName) {
-        return appName + "::" + clazzName + "." + methodName;
+    public static String generateCacheName(String prefix, String appName, String clazzName, String methodName) {
+        return String.join(":", Arrays.asList(prefix, appName.toUpperCase(), clazzName)) + "#" + methodName;
     }
 
     public static String generateCacheKey(Object[] args) {
